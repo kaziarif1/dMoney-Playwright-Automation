@@ -4,20 +4,11 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { makeAgentData, required } = require('../utils/test-data');
 const { saveStatementCsv } = require('../utils/csv-helper');
-
-async function waitForUpdatedOtpOrManualVerification(page, previousOtp) {
-  const navigation = page.getByRole('navigation');
-  const envPath = path.join(__dirname, '..', '.env');
-  const deadline = Date.now() + 100_000;
-  while (Date.now() < deadline) {
-    if (await navigation.isVisible()) return null;
-    const env = require('dotenv').parse(fs.readFileSync(envPath));
-    const otp = env.DMONEY_OTP?.trim();
-    if (otp && otp !== previousOtp && /^\d{4}$/.test(otp)) return otp;
-    await new Promise(resolve => setTimeout(resolve, 1_000));
-  }
-  throw new Error('Timed out waiting for OTP entry in the browser or a fresh 4-digit DMONEY_OTP in .env.');
-}
+const {
+  verifyGmailAccess,
+  waitForAgentResetUrl,
+  waitForDmoneyOtp,
+} = require('../utils/gmail-helper');
 
 async function waitForUpdatedCustomerId(previousCustomerId) {
   const envPath = path.join(__dirname, '..', '.env');
@@ -31,41 +22,21 @@ async function waitForUpdatedCustomerId(previousCustomerId) {
   throw new Error('Timed out waiting for a different DMONEY_CUSTOMER_ID in .env.');
 }
 
-async function waitForFreshResetUrl(previousResetUrl) {
-  const envPath = path.join(__dirname, '..', '.env');
-  const deadline = Date.now() + 15 * 60_000;
-  while (Date.now() < deadline) {
-    const env = require('dotenv').parse(fs.readFileSync(envPath));
-    const resetUrl = env.DMONEY_AGENT_RESET_URL?.trim();
-    if (resetUrl && resetUrl !== previousResetUrl) {
-      if (!/^https:\/\/dmoneyportal\.roadtocareer\.net\/reset-password(?:[/?#]|$)/i.test(resetUrl)) {
-        throw new Error('DMONEY_AGENT_RESET_URL must be the reset link from dmoneyportal.roadtocareer.net.');
-      }
-      return resetUrl;
-    }
-    await new Promise(resolve => setTimeout(resolve, 1_000));
-  }
-  throw new Error('Timed out waiting for a fresh DMONEY_AGENT_RESET_URL in .env.');
-}
-
 async function login(page, email, password) {
-  const envPath = path.join(__dirname, '..', '.env');
-  const previousOtp = require('dotenv').parse(fs.readFileSync(envPath)).DMONEY_OTP?.trim() || '';
   await page.goto('/login');
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password/i).fill(password);
+  const loginSubmittedAt = Date.now();
   await page.getByRole('button', { name: /log ?in|sign ?in/i }).click();
   const navigation = page.getByRole('navigation');
   const otpInput = page.getByRole('textbox', { name: /enter 4-digit otp/i });
   await expect(navigation.or(otpInput), 'Login should open navigation or request email OTP.')
     .toBeVisible({ timeout: 20_000 });
   if (await otpInput.isVisible()) {
-    console.log('[regression] OTP requested. Enter it in the headed browser or update DMONEY_OTP in .env.');
-    const otp = await waitForUpdatedOtpOrManualVerification(page, previousOtp);
-    if (otp) {
-      await otpInput.fill(otp);
-      await page.getByRole('button', { name: /verify otp/i }).click();
-    }
+    console.log('[regression] OTP requested; waiting for the new Agent OTP email in Gmail.');
+    const otp = await waitForDmoneyOtp(email, loginSubmittedAt);
+    await otpInput.fill(otp);
+    await page.getByRole('button', { name: /verify otp/i }).click();
   }
   await expect(navigation, 'Successful login should open the authenticated portal navigation.')
     .toBeVisible({ timeout: 20_000 });
@@ -86,18 +57,23 @@ async function logout(page) {
   console.log(`[regression] ${displayName} is logged out; login page is visible.`);
 }
 
-async function resetAgentPassword(page, email, newPassword, previousResetUrl) {
+async function resetAgentPassword(page, email, newPassword) {
   await page.goto('/login');
   await page.getByText(/forgot password\?/i).click();
   await expect(page).toHaveURL(/\/forgot-password(?:[/?#]|$)/);
   await page.getByRole('textbox', { name: /email or phone number/i }).fill(email);
+  const resetRequestedAt = Date.now();
   await page.getByRole('button', { name: /send reset link/i }).click();
   await expect(page.getByRole('alert').filter({ hasText: /password reset link has been sent/i }))
     .toBeVisible();
 
-  console.log('[regression] Reset link sent. Paste its URL into DMONEY_AGENT_RESET_URL in .env.');
-  const resetUrl = await waitForFreshResetUrl(previousResetUrl);
-  await page.goto(resetUrl);
+  console.log('[regression] Reset link sent; waiting for the new Agent password-reset email in Gmail.');
+  const resetUrl = await waitForAgentResetUrl(email, resetRequestedAt);
+  try {
+    await page.goto(resetUrl);
+  } catch {
+    throw new Error('Could not open the validated Agent password-reset page.');
+  }
 
   await page.getByRole('textbox', { name: 'New Password', exact: true }).fill(newPassword);
   await page.getByRole('textbox', { name: 'Confirm New Password', exact: true }).fill(newPassword);
@@ -109,6 +85,7 @@ async function resetAgentPassword(page, email, newPassword, previousResetUrl) {
 
 test('Agent registration, approval, deposits, reset, and statement export', async ({ page }) => {
   test.setTimeout(1_200_000);
+  await verifyGmailAccess();
   const agent = makeAgentData();
   const adminEmail = required('DMONEY_ADMIN_EMAIL');
   const adminPassword = required('DMONEY_ADMIN_PASSWORD');
@@ -117,10 +94,6 @@ test('Agent registration, approval, deposits, reset, and statement export', asyn
   const customerId = required('DMONEY_CUSTOMER_ID');
   const resetPassword = process.env.DMONEY_AGENT_RESET_PASSWORD?.trim() ||
     `Reset!${crypto.randomBytes(6).toString('hex')}9`;
-  const previousResetUrl = require('dotenv').parse(
-    fs.readFileSync(path.join(__dirname, '..', '.env'))
-  ).DMONEY_AGENT_RESET_URL?.trim() || '';
-
   // Registration controls and pending approval are verified from the live portal.
   console.log('[regression] Opening the portal and navigating to Agent registration.');
   await page.goto('/');
@@ -152,9 +125,9 @@ test('Agent registration, approval, deposits, reset, and statement export', asyn
 
   // A successful registration returns to the login page. The portal's
   // "JWT + OTP Authentication" note is on login; it does not indicate that
-  // registration requires an OTP. Do not apply DMONEY_OTP to this step.
+  // Registration succeeds without an OTP; email verification is handled at login.
   await expect(page).toHaveURL(/\/login(?:[/?#]|$)/, { timeout: 15_000 });
-  console.log(`[regression] Registration succeeded for ${agent.email}; portal returned to login.`);
+  console.log('[regression] Agent registration succeeded; portal returned to login.');
 
   console.log('[regression] Signing in as Admin.');
   await login(page, adminEmail, adminPassword);
@@ -173,7 +146,7 @@ test('Agent registration, approval, deposits, reset, and statement export', asyn
   await page.getByRole('option', { name: 'Search by Email', exact: true }).click();
   await page.getByRole('textbox', { name: 'Enter Email' }).fill(agent.email);
   await page.getByRole('button', { name: 'Search', exact: true }).click();
-  console.log(`[regression] Searching User List for ${agent.email}.`);
+  console.log('[regression] Searching User List for the newly registered Agent.');
   const agentRow = userTable.getByRole('row').filter({ hasText: agent.email });
   await expect(agentRow).toBeVisible();
   await expect(agentRow).toContainText(/agent/i);
@@ -250,7 +223,7 @@ test('Agent registration, approval, deposits, reset, and statement export', asyn
   console.log('[regression] Agent balance reflects the 500 BDT Cash In and commission.');
   await logout(page);
 
-  await resetAgentPassword(page, agent.email, resetPassword, previousResetUrl);
+  await resetAgentPassword(page, agent.email, resetPassword);
   await page.goto('/login');
   await page.getByLabel(/email or phone/i).fill(agent.email);
   await page.getByLabel(/password/i).fill(agent.password);

@@ -25,17 +25,17 @@ Requirements: Node.js 20+, a Gmail inbox for Agent OTP/password-reset emails, po
    $env:PW_HEADED='1'; npm run test:regression
    ```
 
-Enter the OTP in the headed browser when prompted. For password reset, copy the email's one-time link into `DMONEY_AGENT_RESET_URL` in `.env` when prompted. The regression covers Agent registration and activation, System funding, Agent-to-Customer deposit, balances and statement checks, password reset, and CSV export to `output/self_statement_YYYY-MM-DD.csv`. It verifies the CSV is written and includes the expected transactions. CSV output and test artifacts are local and excluded from Git.
+The regression reads the new Agent OTP and password-reset email using Gmail API OAuth. Enable Gmail API, create an OAuth client, and authorize the inbox with the read-only scope `https://www.googleapis.com/auth/gmail.readonly`. Put `DMONEY_GMAIL_CLIENT_ID`, `DMONEY_GMAIL_CLIENT_SECRET`, and `DMONEY_GMAIL_REFRESH_TOKEN` in local `.env`; never commit these values. The test covers Agent registration and activation, deposits and balance checks, password reset, statement assertions, and verified CSV export to `output/self_statement_YYYY-MM-DD.csv`. CSV output and test artifacts are excluded from Git.
 
 ## Evidence
 
-Latest results: regression passed; smoke suite passed 2/2 tests.
+Latest verification (17 Oct 2026): the Gmail-backed headed regression passed 1/1 in 1.4 minutes. The smoke suite has previously passed 2/2 tests.
 
 | Regression | Smoke |
 |---|---|
 | ![Regression results](docs/evidence/regression-result.png) | ![Smoke results](docs/evidence/smoke-result.png) |
 
-[Watch the headed regression](docs/evidence/regression-video-redacted.mp4). Personal details, account identifiers, passwords, and OTPs are masked in the video.
+[Watch the headed regression](docs/evidence/regression-video-final.webm). The workflow and transaction results remain visible; OTPs and personal/account identifiers are obscured.
 
 ## Repository
 
