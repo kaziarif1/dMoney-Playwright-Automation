@@ -35,7 +35,7 @@ Latest verification (17 Oct 2026): the Gmail-backed headed regression passed 1/1
 |---|---|
 | ![Regression results](docs/evidence/regression-result.png) | ![Smoke results](docs/evidence/smoke-result.png) |
 
-[Watch the headed regression](docs/evidence/regression-video-final.webm). The workflow and transaction results remain visible; OTPs and personal/account identifiers are obscured.
+[Watch the headed regression](docs/evidence/regression-video.webm). The workflow and transaction results remain visible; OTPs and personal/account identifiers are obscured.
 
 ## Repository
 
