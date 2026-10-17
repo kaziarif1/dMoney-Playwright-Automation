@@ -55,4 +55,6 @@ The full headed recording is kept locally and excluded from the public repositor
 
 ## Submission
 
-Initialize a Git repository, review the staged files to ensure no credentials or generated runtime artifacts are included, push it to GitHub, and submit the repository URL.
+Repository: <https://github.com/kaziarif1/dMoney-Playwright-Automation>
+
+The public `main` branch includes the source, test-result screenshots, and configuration template. It excludes `.env`, generated test artifacts, the CSV output, and the raw regression video. The video remains local because it contains Customer transaction details; replace it with a redacted recording before publishing video evidence.
