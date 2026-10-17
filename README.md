@@ -51,10 +51,12 @@ Latest verification: the headed regression passed, and the smoke suite passed 2/
 
 ### Full headed execution
 
-The full headed recording is kept locally and excluded from the public repository because it contains Customer transaction details. Replace it with a redacted copy before publishing video evidence.
+[Watch the full headed regression video](docs/evidence/regression-video-redacted.mp4)
+
+The video preserves the complete run and portal navigation; the main content area is blacked out throughout to prevent disclosure of account and transaction data. The original unredacted recording remains local and is excluded from the public repository.
 
 ## Submission
 
 Repository: <https://github.com/kaziarif1/dMoney-Playwright-Automation>
 
-The public `main` branch includes the source, test-result screenshots, and configuration template. It excludes `.env`, generated test artifacts, the CSV output, and the raw regression video. The video remains local because it contains Customer transaction details; replace it with a redacted recording before publishing video evidence.
+The public `main` branch includes the source, test-result screenshots, a redacted regression recording, and configuration template. It excludes `.env`, generated test artifacts, the CSV output, and the unredacted recording.
