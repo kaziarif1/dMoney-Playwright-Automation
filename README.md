@@ -1,62 +1,42 @@
-# Batch 19 — Playwright dMoney Assignment
+# dMoney Playwright Automation
 
-Playwright end-to-end automation for the dMoney training portal: <https://dmoneyportal.roadtocareer.net>.
+**Author:** Kazi Abu Jafor Arif  
+**Batch:** 19  
+**Track:** Software Development and Engineering in Test (SDET)
 
-## Requirements
+End-to-end automation for the [dMoney training portal](https://dmoneyportal.roadtocareer.net).
 
-- Node.js 20+
-- npm dependencies (`npm ci`)
-- Playwright Chromium (`npx playwright install chromium`)
-- A Gmail inbox you can access for Agent OTP and password-reset email
-- Admin and System credentials for the training portal
-- An existing Customer's **11-digit phone number**, including its leading zero
+## Setup and run
 
-Copy `.env.example` to `.env` and fill in the local values. Never commit `.env`, OTPs, or credentials.
+Requirements: Node.js 20+, a Gmail inbox for Agent OTP/password-reset emails, portal Admin/System credentials, and an existing Customer's 11-digit phone number.
 
-## Run
+1. Copy `.env.example` to `.env` and fill in the required local values. Never commit credentials, OTPs, or reset links.
+2. Install dependencies and Chromium:
 
-```powershell
-npm ci
-npx playwright install chromium
-npm run test:smoke
-$env:PW_HEADED='1'; npm run test:regression
-```
+   ```powershell
+   npm ci
+   npx playwright install chromium
+   ```
 
-The regression is intentionally headed because the portal requires live email verification:
+3. Run the positive smoke suite or headed regression:
 
-1. When Agent login requests an OTP, enter it in the browser and submit it. The test also accepts a fresh `DMONEY_OTP` saved in `.env`.
-2. During password reset, copy the reset URL from the Agent email and paste it into `DMONEY_AGENT_RESET_URL` in `.env` as soon as prompted. The test waits up to 15 minutes, validates and opens that link, enters a generated new password, then verifies the old password is rejected and the new one works. The reset URL is a one-time secret; do not share or commit it.
+   ```powershell
+   npm run test:smoke
+   $env:PW_HEADED='1'; npm run test:regression
+   ```
 
-The full regression registers and activates an Agent, checks the initial pending state and persisted active state, funds the Agent with System Cash In, checks the balance, funds an existing Customer, verifies the resulting balance and statement transaction records, resets the Agent password, and exports all visible Self Statement table data to `output/self_statement_YYYY-MM-DD.csv` using the Asia/Dhaka date.
-
-## Test coverage
-
-- `tests/agent-lifecycle.spec.js` — serial, stateful end-to-end regression for the assignment workflow.
-- `tests/smoke.spec.js` — positive smoke checks for the public home page and registration form.
-- `utils/csv-helper.js` — CSV escaping, UTF-8 output, and date-based file naming.
-
-Run the headed regression with `$env:PW_HEADED='1'; npm run test:regression`, or the positive smoke group with `npm run test:smoke`. Playwright writes videos, traces, screenshots on failure, and HTML reports under `test-results/` and `playwright-report/`; these generated folders and `output/` are ignored by Git.
+Enter the OTP in the headed browser when prompted. For password reset, copy the email's one-time link into `DMONEY_AGENT_RESET_URL` in `.env` when prompted. The regression covers Agent registration and activation, System funding, Agent-to-Customer deposit, balances and statement checks, password reset, and CSV export to `output/self_statement_YYYY-MM-DD.csv`. It verifies the CSV is written and includes the expected transactions. CSV output and test artifacts are local and excluded from Git.
 
 ## Evidence
 
-Latest verification: the headed regression passed, and the smoke suite passed 2/2 tests.
+Latest results: regression passed; smoke suite passed 2/2 tests.
 
-### Regression Test Result
+| Regression | Smoke |
+|---|---|
+| ![Regression results](docs/evidence/regression-result.png) | ![Smoke results](docs/evidence/smoke-result.png) |
 
-![Regression Test Result](docs/evidence/regression-result.png)
+[Watch the headed regression](docs/evidence/regression-video-redacted.mp4). Personal details, account identifiers, passwords, and OTPs are masked in the video.
 
-### Smoke Test Result
+## Repository
 
-![Smoke Test Result](docs/evidence/smoke-result.png)
-
-### Full headed execution
-
-[Watch the full headed regression video](docs/evidence/regression-video-redacted.mp4)
-
-The video preserves the portal screens, actions, and transaction results. Small areas containing account identifiers, personal details, passwords, and OTPs are masked; the original unredacted recording remains local and is excluded from the public repository.
-
-## Submission
-
-Repository: <https://github.com/kaziarif1/dMoney-Playwright-Automation>
-
-The public `main` branch includes the source, test-result screenshots, a redacted regression recording, and configuration template. It excludes `.env`, generated test artifacts, the CSV output, and the unredacted recording.
+[GitHub repository](https://github.com/kaziarif1/dMoney-Playwright-Automation)
