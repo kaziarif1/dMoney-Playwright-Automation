@@ -53,7 +53,7 @@ Latest verification: the headed regression passed, and the smoke suite passed 2/
 
 [Watch the full headed regression video](docs/evidence/regression-video-redacted.mp4)
 
-The video preserves the complete run and portal navigation; the main content area is blacked out throughout to prevent disclosure of account and transaction data. The original unredacted recording remains local and is excluded from the public repository.
+The video preserves the portal screens, actions, and transaction results. Small areas containing account identifiers, personal details, passwords, and OTPs are masked; the original unredacted recording remains local and is excluded from the public repository.
 
 ## Submission
 
