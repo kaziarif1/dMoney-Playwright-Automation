@@ -37,7 +37,7 @@ The regression reads the new Agent OTP and password-reset email using Gmail API 
 
 ## Evidence
 
-The latest headed regression passed on 17 Oct 2026 (1 test passed in 1.4 minutes). The smoke suite passed 2/2 tests in a previous run.
+The headed regression passed (1 test in 1.4 minutes), and the smoke suite passed 2/2 tests in a previous run.
 
 | Regression | Smoke |
 |---|---|
