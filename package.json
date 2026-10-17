@@ -1,0 +1,22 @@
+{
+  "name": "dmoney-playwright-assignment",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Playwright automation for the dMoney QA practice portal",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:smoke": "playwright test tests/smoke.spec.js",
+    "test:regression": "playwright test tests/agent-lifecycle.spec.js",
+    "test:debug": "playwright test --config=playwright-debug.config.js",
+    "test:debug:smoke": "playwright test --config=playwright-debug.config.js tests/smoke.spec.js",
+    "test:debug:regression": "playwright test --config=playwright-debug.config.js tests/agent-lifecycle.spec.js",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.8"
+  }
+}

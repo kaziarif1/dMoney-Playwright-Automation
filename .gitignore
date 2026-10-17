@@ -1,0 +1,11 @@
+node_modules/
+test-results/
+playwright-report/
+output/
+docs/evidence/regression-video.webm
+.env
+.env.*
+!.env.example
+playwright/.auth/
+storageState*.json
+*.log
